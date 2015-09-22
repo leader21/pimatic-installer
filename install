@@ -1,0 +1,634 @@
+#!/bin/bash
+##################################################################
+#
+#               P I M A T I C  I N S T A L L E R 
+#
+# This installation routine is part of Pimatic and provides an
+# installation menu for Pimatic, Homeduino and addon programs.
+# 
+#
+# Copyright in 2015 by Christopher Bott / chris@pimatic.org
+#
+# Learn more about Pimatic : http://www.pimatic.org 
+#							 http://forum.pimatic.org
+#							 http://www.facebook.com/pimatic
+#
+##################################################################
+
+
+################# Set Variables #################
+
+################# Set version number #################
+VER='0.1.0'
+################# Set dir and file paths #################
+debug="/home/pi/pimatic-installer/logs/debug.log"
+install_dir="/home/pi/pimatic-installer"
+homeduino_installdir="/home/pi/homeduino"
+homeduino_scripts="/home/pi/pimatic-installer/homeduino-scripts"
+pimatic_log="/home/pi/pimatic-installer/logs/pimatic.log"
+homeduino_log="/home/pi/pimatic-installer/logs/homeduino.log"
+wiringpi_log="/home/pi/pimatic-installer/logs/wiringpi.log"
+rf433mhzutils_log="/home/pi/pimatic-installer/logs/433mhzutils.log"
+_temp="/tmp/pmaticinstaller.$$"
+date=`date`
+
+################# Reset and Create logfiles  #################
+sudo rm -rf $homeduino_scripts/*
+sudo touch $pimatic_log; sudo touch $homeduino_log; sudo touch $pimatic_log
+sudo touch $wiringpi_log; sudo touch $rf433mhzutils_log; sudo touch $debug
+
+################# Installation Menu #################
+installation() {
+	cmd=(dialog --separate-output
+				--backtitle "Pimatic Homeautomation System Installer v$VER - $date"  
+				--title " Select installation options " 
+				--cancel-label "Back"
+				--checklist "\n Move using [UP] [DOWN] [Space] [Enter] to select " 15 60 4)
+	options=(1 "Install Pimatic" on    # any option can be set by default to "on"
+			 2 "Install Homeduino" off
+			 3 "Install WiringPi" off
+			 4 "Install 433MHz Utils" off)
+	choices=$("${cmd[@]}" "${options[@]}"  2>&1 >/dev/tty)
+	for choice in $choices
+    do
+		case $choice in
+			1)
+				################# Pimatic Installer #################
+				dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Now installing Pimatic" --yes-label "Yes" --no-label "No" --yesno "\nDo you want to continue with installing Pimatic" 10 60
+				selection=$?
+				for yesno in $selection
+				do
+				   case $yesno in
+					0)
+						dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Pimatic installation starts" --msgbox '\nThe installation of Pimatic starts after clicking OK.\nPlease be really really patient!!\nThe installation takes some time!\nGrab a coffee, keep calm.\nYou will be informed when done.' 10 60
+						################# Pimatic Installation Script #################
+						sudo echo "$date Select : Install Pimatic" >> $debug
+						dir="/home/pi/pimatic-app"
+						if [ -d "$dir" ]
+							then
+									sudo rm -rf $pimatic_log &>> /dev/null
+									echo "$date Pimatic already exists. Nothing to install." >> $pimatic_log
+									sudo echo "Pimatic already exists. Nothing to install." >> $debug
+							else
+									echo "$date Installing Pimatic ..." >> $pimatic_log
+									sudo rm -rf $pimatic_log &>> /dev/null
+									echo "0" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Pimatic" --gauge "Please wait..." 10 70 0
+									sudo apt-get -qq update &>> $pimatic_log
+									echo "10" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Pimatic" --gauge "Please wait..." 10 70 0
+									sudo apt-get -qq upgrade &>> $pimatic_log
+									echo "20" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Pimatic" --gauge "Please wait..." 10 70 0
+									cd /home/pi &>> $pimatic_log
+									wget http://nodejs.org/dist/v0.10.24/node-v0.10.24-linux-arm-pi.tar.gz -P /tmp
+									echo "30" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Pimatic" --gauge "Please wait..." 10 70 0
+									cd /usr/local &>> $pimatic_log
+									sudo tar xzvf /tmp/node-v0.10.24-linux-arm-pi.tar.gz --strip=1 &>> $pimatic_log
+									echo "40" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Pimatic" --gauge "Please wait..." 10 70 0
+									sudo apt-get -qq install build-essential &>> $pimatic_log
+									echo "50" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Pimatic" --gauge "Please wait...\n\nGrab some coffee! \nWill take a while until the next step proceeds. \nDon't panic, can take up to 30 minutes!!!" 10 70 0
+									cd /home/pi &>> $pimatic_log
+									mkdir pimatic-app &>> $pimatic_log
+									npm install pimatic --prefix pimatic-app --production &>> $pimatic_log
+									echo "70" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Pimatic" --gauge "Please wait... \n\nWhat did I say, don't panic ;) \nOnly a few steps left. \nCan take another 20 Minutes, grab more coffee..." 10 70 0
+									cd pimatic-app &>> $pimatic_log
+									cp ./node_modules/pimatic/config_default.json ./config.json &>> $pimatic_log
+									cd ./node_modules/pimatic &>> $pimatic_log
+									sudo npm link &>> $pimatic_log
+									echo "80" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Pimatic" --gauge "Please wait..." 10 70 0
+									wget https://raw.github.com/pimatic/pimatic/master/install/pimatic-init-d &>> $pimatic_log
+									echo "90" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Pimatic" --gauge "Please wait..." 10 70 0
+									sudo cp pimatic-init-d /etc/init.d/pimatic &>> $pimatic_log
+									sudo chmod +x /etc/init.d/pimatic &>> $pimatic_log
+									sudo chown root:root /etc/init.d/pimatic &>> $pimatic_log
+									sudo update-rc.d pimatic defaults &>> $pimatic_log
+									clear 
+									echo "100" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Pimatic" --gauge "Installation finished!" 10 70 0
+									dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "IMPORTANT NOTICE" --pause "\n\nThe first start of Pimatic takes time! \nThe SQlite database will be build! \n\nDo not abort this installation and be patient for the last time. " 15 70 10
+									echo "$date Done! Pimatic has been installed! Keep in mind that the first start of Pimatic takes some time!" >> $pimatic_log
+									sudo echo "$date Done! Pimatic has been installed! Keep in mind that the first start of Pimatic takes some time!" >> $debug																														
+									################# Get admin password and write it to config.json #################
+									data=$(tempfile 2>/dev/null)
+									trap "rm -f $data" 0 1 2 5 15						 
+									### get password with the --insecure option
+									dialog --title "Set admin password" \
+									--insecure \
+									--nocancel \
+									--passwordbox "Enter your password for admin" 10 30> $data		
+									passwd=`cat $data`
+									sudo sed -i "s/\"password\": \"\"/\"password\": \"$passwd\"/g" /home/pi/pimatic-app/config.json
+									sudo echo "$date Set admin password done." >> $debug
+						fi
+						################# Show Pimatic Logfile #################		
+						dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Pimatic installation finshed" --yes-label "Yes" --no-label "No" --yesno '\n Pimatic installation finished. \nShow logfile?' 10 60
+						selection=$?
+						for yesno in $selection
+						do
+							case $yesno in
+								0)
+									dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --textbox /home/pi/dialog/pimatic.log 50 150
+									dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Pimatic installation finished" --msgbox '\nPlease keep in mind that the first start of Pimatic takes a while (keep calm again ;)! \n The SQlite3 Database needs to be build. \n' 10 60 
+									;;
+							esac
+						done
+						;;
+					1)
+						dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Pimatic installation cancelled" --msgbox '\nInstallation cancelled by user' 10 60
+						sudo echo "$date Pimatic installation cancelled by user." >> $debug
+						;;
+					255)
+						dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Pimatic installation aborted" --msgbox '\nInstallation aborted by user' 10 60
+						sudo echo "$date Pimatic installation cancelled by escape." >> $debug
+						;;
+					esac
+				done
+				;;
+			2)
+				################# Homeduino Installer #################
+				dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Now installing Homeduino" --yes-label "Yes" --no-label "No" --yesno "\n\nHomeduino is a special firmware mainly for receiving and transmitting RF data.\nYou need an Arduino connected to the USB Port of your Pi.\nDo you wish to continue?" 10 70
+				selection=$?
+				for yesno in $selection
+				do
+				   case $yesno in
+					0)
+						################# Homeduino Installation Menu #################
+						cmd=(dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"  
+									--title "Select installation options"
+									--cancel-label "Back"
+									--radiolist "\nMove using [UP] [DOWN],[SPACE] [ENTER] to select" 15 60 4)
+							options=(1 "Install Homeduino on Nano USB0 (default)" on
+									 2 "Install Homeduino on Nano USB1" off
+									 3 "Install Homeduino on Mega USB0" off
+									 4 "Install Homeduino on Mega USB1" off)
+							choices=$("${cmd[@]}" "${options[@]}"  2>&1 >/dev/tty)
+							for choice in $choices
+							do
+								case $choice in
+									1)	################# Homeduino Installer Nano USB0 ################# 
+										dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title " Homeduino Installation " --yes-label "Yes" --no-label "No" --yesno "\nInstallation of Homeduino starts now.\nDo you wish to continue?" 10 30
+										selection=$?
+										for yesno in $selection
+										do
+										   case $yesno in
+											0)												
+												#dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation starts" --msgbox '\nInstallation of Homeduino on Nano USB0 starts. ' 10 60
+												echo "0" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												sudo echo "$date Select : Install Homeduino on Arduino Nano connected to USB0" >> $debug
+												sudo echo "$date Select : Install Homeduino on Arduino Nano connected to USB0" >> $homeduino_log
+												sudo rm -rf $homeduino_installdir &>> /dev/null																													
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Homeduino installation starts" --msgbox '\nInstallation of Homeduino starts' 10 60
+												################# Installation Script for Homeduino Nano USB0 #################
+												# Install all necessary libraries
+												echo "10" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												sudo apt-get -qq install arduino-core avr-libc avrdude binutils-avr gcc-avr libconfig-yaml-perl libftdi1 libyaml-perl screen python-serial &>> $homeduino_log
+												# Copy the complete Homeduino working directory to the Pi. I cloned it into the pimatic-app folder, but you can also put it into your home directory. That doesn't really matter.
+												echo "30" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												cd /home/pi &>> $homeduino_log
+												sudo git clone --recursive https://github.com/pimatic/homeduino.git &>> $homeduino_log
+												echo "50" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												# Now go to the Homeduino working directory you've just cloned from git
+												cd homeduino &>> $homeduino_log
+												# Copy the correct installation script to the Homeduino folder
+												sudo cp $homeduino_scripts/nano_usb0 /home/pi/homeduino/Makefile &>> $homeduino_log
+												# Stop Pimatic if it's still running!!
+												echo "70" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												sudo service pimatic stop >> $homeduino_log
+												# Upload the script to the Arduino
+												echo "90" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait...\n\nUploading to Arduino. Compiling the script may take a while!" 10 70 0
+												sudo make upload &>> $homeduino_log
+												echo "100" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduion" --gauge "Installation finished! " 10 70 0
+												################# Show logfile query #################
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Homeduino installation finshed" --yes-label "Yes" --no-label "No" --yesno '\n Homeduino installation finished\n Show logfile?' 10 60
+												selection=$?
+												for yesno in $selection
+												do
+													case $yesno in
+														0)
+															dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --exit-label "OK" --textbox $homeduino_log 50 150
+															;;
+													esac
+												done
+												################# Start the Pimatic daemon #################
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Start Pimatic"  --yes-label "Yes" --no-label "No" --yesno '\nDo you want to start the Pimatic Daemon now? \n\nRemember : at first start of Pimatic, the initial setup needs more time. \nThe SQlite Database will be installed.' 10 75
+												selection=$?
+												for yesno in $selection
+												do
+													case $yesno in
+														0)
+															sudo echo "$date Starting Pimatic daemon after Homeduino has been installed" >> $homeduino_log
+															sudo echo "$date Starting Pimatic daemon after Homeduino has been installed" >> $debug
+															sudo service pimatic start >> $homeduino_log
+															;;															
+													esac
+												done															
+												;;											
+											1)
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation aborted" --msgbox '\nInstallation aborted by user' 10 60
+												sudo echo "Homeduino installation on Arduino Nano connected at USB0 cancelled by user" >> $debug
+												;;
+											255)
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation aborted" --msgbox '\nInstallation aborted by user' 10 60
+												sudo echo "Homeduino installation on Arduino Nano connected at USB0 by escape" >> $debug
+												;;
+											esac
+										done
+										;;
+									2)
+										################# Homeduino Installer Nano USB1 #################
+										dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title " Homeduino Installation " --yes-label "Yes" --no-label "No" --yesno "\nInstallation of Homeduino starts now.\nDo you wish to continue?" 10 30
+										selection=$?
+										for yesno in $selection
+										do
+										   case $yesno in
+											0)												
+												#dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation starts" --msgbox '\nInstallation of Homeduino on Nano USB1 starts. ' 10 60
+												echo "0" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												sudo echo "$date Select : Install Homeduino on Arduino Nano connected to USB1" >> $debug
+												sudo echo "$date Select : Install Homeduino on Arduino Nano connected to USB1" >> $homeduino_log
+												sudo rm -rf $homeduino_installdir &>> /dev/null																													
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Homeduino installation starts" --msgbox '\nInstallation of Homeduino starts' 10 60
+												################# Installation Script for Homeduino Nano USB1 #################
+												# Install all necessary libraries
+												echo "10" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												sudo apt-get -qq install arduino-core avr-libc avrdude binutils-avr gcc-avr libconfig-yaml-perl libftdi1 libyaml-perl screen python-serial &>> $homeduino_log
+												# Copy the complete Homeduino working directory to the Pi. I cloned it into the pimatic-app folder, but you can also put it into your home directory. That doesn't really matter.
+												echo "30" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												cd /home/pi &>> $homeduino_log
+												sudo git clone --recursive https://github.com/pimatic/homeduino.git &>> $homeduino_log
+												echo "50" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												# Now go to the Homeduino working directory you've just cloned from git
+												cd homeduino &>> $homeduino_log
+												# Copy the correct installation script to the Homeduino folder
+												sudo cp $homeduino_scripts/nano_usb1 /home/pi/homeduino/Makefile &>> $homeduino_log
+												# Stop Pimatic if it's still running!!
+												echo "70" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												sudo service pimatic stop >> $homeduino_log
+												# Upload the script to the Arduino
+												echo "90" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait...\n\nUploading to Arduino. Compiling the script may take a while!" 10 70 0
+												sudo make upload &>> $homeduino_log
+												echo "100" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduion" --gauge "Installation finished! " 10 70 0
+												################# Show logfile query #################
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Homeduino installation finshed" --yes-label "Yes" --no-label "No" --yesno '\n Homeduino installation finished\n Show logfile?' 10 60
+												selection=$?
+												for yesno in $selection
+												do
+													case $yesno in
+														0)
+															dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --exit-label "OK" --textbox $homeduino_log 50 150
+															;;
+													esac
+												done
+												################# Start the Pimatic daemon #################
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Start Pimatic"  --yes-label "Yes" --no-label "No" --yesno '\nDo you want to start the Pimatic Daemon now? \n\nRemember : at first start of Pimatic, the initial setup needs more time. \nThe SQlite Database will be installed.' 10 75
+												selection=$?
+												for yesno in $selection
+												do
+													case $yesno in
+														0)
+															sudo echo "$date Starting Pimatic daemon after Homeduino has been installed" >> $homeduino_log
+															sudo echo "$date Starting Pimatic daemon after Homeduino has been installed" >> $debug
+															sudo service pimatic start >> $homeduino_log
+															;;															
+													esac
+												done															
+												;;
+											1)
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation aborted" --msgbox '\nInstallation aborted by user' 10 60
+												sudo echo "Homeduino installation Nano USB1 cancelled by user." >> $debug
+												;;
+											255)
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation aborted" --msgbox '\nInstallation aborted by user' 10 60
+												sudo echo "Homeduino installation Nano USB1 cancelled by escape." >> $debug
+												;;
+											esac
+										done
+										;;
+									3)
+										################# Homeduino Installer Mega USB0 #################
+										dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title " Homeduino Installation " --yes-label "Yes" --no-label "No" --yesno "\nInstallation of Homeduino starts now.\nDo you wish to continue?" 10 30
+										selection=$?
+										for yesno in $selection
+										do
+										   case $yesno in
+											0)												
+												#dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation starts" --msgbox '\nInstallation of Homeduino on Mega USB1 starts. ' 10 60											
+												echo "0" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												sudo echo "$date Select : Install Homeduino on Arduino Mega2560 connected to USB0" >> $debug
+												sudo echo "$date Select : Install Homeduino on Arduino Mega2560 connected to USB0" >> $homeduino_log
+												sudo rm -rf $homeduino_installdir &>> /dev/null																													
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Homeduino installation starts" --msgbox '\nInstallation of Homeduino starts' 10 60
+												################# Installation Script for Homeduino Mega USB0 #################
+												# Install all necessary libraries
+												echo "10" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												sudo apt-get -qq install arduino-core avr-libc avrdude binutils-avr gcc-avr libconfig-yaml-perl libftdi1 libyaml-perl screen python-serial &>> $homeduino_log
+												# Copy the complete Homeduino working directory to the Pi. I cloned it into the pimatic-app folder, but you can also put it into your home directory. That doesn't really matter.
+												echo "30" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												cd /home/pi &>> $homeduino_log
+												sudo git clone --recursive https://github.com/pimatic/homeduino.git &>> $homeduino_log
+												echo "50" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												# Now go to the Homeduino working directory you've just cloned from git
+												cd homeduino &>> $homeduino_log
+												# Copy the correct installation script to the Homeduino folder
+												sudo cp $homeduino_scripts/mega_usb0 /home/pi/homeduino/Makefile &>> $homeduino_log
+												# Stop Pimatic if it's still running!!
+												echo "70" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												sudo service pimatic stop >> $homeduino_log
+												# Upload the script to the Arduino
+												echo "90" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait...\n\nUploading to Arduino. Compiling the script may take a while!" 10 70 0
+												sudo make upload &>> $homeduino_log
+												echo "100" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduion" --gauge "Installation finished! " 10 70 0
+												################# Show logfile query #################
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Homeduino installation finshed" --yes-label "Yes" --no-label "No" --yesno '\n Homeduino installation finished\n Show logfile?' 10 60
+												selection=$?
+												for yesno in $selection
+												do
+													case $yesno in
+														0)
+															dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --exit-label "OK" --textbox $homeduino_log 50 150
+															;;
+													esac
+												done
+												################# Start the Pimatic daemon #################
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Start Pimatic"  --yes-label "Yes" --no-label "No" --yesno '\nDo you want to start the Pimatic Daemon now? \n\nRemember : at first start of Pimatic, the initial setup needs more time. \nThe SQlite Database will be installed.' 10 75
+												selection=$?
+												for yesno in $selection
+												do
+													case $yesno in
+														0)
+															sudo echo "$date Starting Pimatic daemon after Homeduino has been installed" >> $homeduino_log
+															sudo echo "$date Starting Pimatic daemon after Homeduino has been installed" >> $debug
+															sudo service pimatic start >> $homeduino_log
+															;;															
+													esac
+												done															
+												;;	
+											1)
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation aborted" --msgbox '\nInstallation aborted by user' 10 60
+												sudo echo "$date Homeduino installation on Arduino Mega connected to USB0 cancelled by user." >> $debug
+												;;
+											255)
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation aborted" --msgbox '\nInstallation aborted by user' 10 60
+												sudo echo "$date Homeduino installation on Arduino Mega connected to USB0 cancelled by escape." >> $debug
+												;;
+											esac
+										done
+										;;
+									4)
+										################# Homeduino Installer Mega USB1 #################
+										dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title " Homeduino Installation " --yes-label "Yes" --no-label "No" --yesno "\nInstallation of Homeduino starts now.\nDo you wish to continue?" 10 30
+										selection=$?
+										for yesno in $selection
+										do
+										   case $yesno in
+											0)												
+												#dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation starts" --msgbox '\nInstallation of Homeduino on Mega USB1 starts. ' 10 60
+												echo "10" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												sudo echo "$date Select : Install Homeduino on Arduino Mega2560 connected to USB0" >> $debug
+												sudo echo "$date Select : Install Homeduino on Arduino Mega2560 connected to USB0" >> $homeduino_log
+												sudo rm -rf $homeduino_installdir &>> /dev/null																													
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Homeduino installation starts" --msgbox '\nInstallation of Homeduino starts' 10 60
+												################# Installation Script for Homeduino Mega USB1 #################
+												# Install all necessary libraries
+												echo "10" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												sudo apt-get -qq install arduino-core avr-libc avrdude binutils-avr gcc-avr libconfig-yaml-perl libftdi1 libyaml-perl screen python-serial &>> $homeduino_log
+												# Copy the complete Homeduino working directory to the Pi. I cloned it into the pimatic-app folder, but you can also put it into your home directory. That doesn't really matter.
+												echo "30" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												cd /home/pi &>> $homeduino_log
+												sudo git clone --recursive https://github.com/pimatic/homeduino.git &>> $homeduino_log
+												echo "50" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												# Now go to the Homeduino working directory you've just cloned from git
+												cd homeduino &>> $homeduino_log
+												# Copy the correct installation script to the Homeduino folder
+												sudo cp $homeduino_scripts/mega_usb1 /home/pi/homeduino/Makefile &>> $homeduino_log
+												# Stop Pimatic if it's still running!!
+												echo "70" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait..." 10 70 0
+												sudo service pimatic stop >> $homeduino_log
+												# Upload the script to the Arduino
+												echo "90" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduino" --gauge "Please wait...\n\nUploading to Arduino. Compiling the script may take a while!" 10 70 0
+												sudo make upload &>> $homeduino_log
+												echo "100" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing Homeduion" --gauge "Installation finished! " 10 70 0
+												################# Show logfile query #################
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Homeduino installation finshed" --yes-label "Yes" --no-label "No" --yesno '\n Homeduino installation finished\n Show logfile?' 10 60
+												selection=$?
+												for yesno in $selection
+												do
+													case $yesno in
+														0)
+															dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --exit-label "OK" --textbox $homeduino_log 50 150
+															;;
+													esac
+												done
+												################# Start the Pimatic daemon #################
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Start Pimatic"  --yes-label "Yes" --no-label "No" --yesno '\nDo you want to start the Pimatic Daemon now? \n\nRemember : at first start of Pimatic, the initial setup needs more time. \nThe SQlite Database will be installed.' 10 75
+												selection=$?
+												for yesno in $selection
+												do
+													case $yesno in
+														0)
+															sudo echo "$date Starting Pimatic daemon after Homeduino has been installed" >> $homeduino_log
+															sudo echo "$date Starting Pimatic daemon after Homeduino has been installed" >> $debug
+															sudo service pimatic start >> $homeduino_log
+															;;															
+													esac
+												done															
+												;;	
+											1)
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation aborted" --msgbox '\nInstallation aborted by user' 10 60
+												sudo echo "Homeduino installation Mega USB1 cancelled by user." >> $debug
+												;;
+											255)
+												dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation aborted" --msgbox '\nInstallation aborted by user' 10 60
+												sudo echo "Homeduino installation Mega USB1 cancelled by escape." >> $debug
+												;;
+											esac
+										done
+										;;
+									255)
+										dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation aborted" --msgbox '\nInstallation aborted by pressing esc' 10 60
+										sudo echo "$date Homeduino installation cancelled" >> $debug
+										;;
+								esac
+							done								
+						;;
+						################# End of Homeduino Installer #################
+					1)
+						dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Homeduino installation cancelled" --msgbox '\nHomeduino installation cancelled by user' 10 60
+						sudo echo "Homeduino installation cancelled by user." >> $debug
+						;;
+					255)
+						dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Homeduino installation aborted" --msgbox '\nInstallation aborted by pressing esc' 10 60
+						sudo echo "Homeduino installation aborted by escape." >> $debug
+						;;
+					esac
+				done
+				;;				
+			3)
+				################# WiringPi Installer #################
+				dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "WiringPi installation starts" --msgbox '\nInstallation of WiringPi starts' 10 60
+				dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "WiringPi installation starts" --yes-label "Yes" --no-label "No" --yesno "\nDo you want to continue with installing WiringPi" 10 60
+				selection=$?
+				for yesno in $selection
+				do
+				   case $yesno in
+					0)
+						dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation starts" --msgbox '\nInstallation of WiringPi' 10 60
+						sudo echo "$date Select : Installation of WiringPi" >> $debug
+							################# WiringPi Installation Script #################
+							dir="/home/pi/wiringPi"
+							if [ -d "$dir" ]
+								then
+										sudo rm -rf $wiringpi_log &>> /dev/null
+										echo "$date WiringPi already exists. Nothing to install." &>> wiringpi.log
+										sudo echo "$date WiringPi already exists. Nothing to install." >> $debug
+								else
+										echo "$date Installing WiringPi ..." &>> wiringpi.log
+										sudo rm -rf $wiringpi_log &>> /dev/null
+										echo "0" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing WiringPi" --gauge "Please wait" 10 70 0
+										cd /home/pi &>> wiringpi.log
+										sudo apt-get -qq install git-core &>> $wiringpi_log
+										echo "25" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing WiringPi" --gauge "Please wait" 10 70 0
+										git clone git://git.drogon.net/wiringPi &>> $wiringpi_log
+										echo "50" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing WiringPi" --gauge "Please wait" 10 70 0
+										cd wiringPi &>> $wiringpi_log
+										echo "75" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing WiringPi" --gauge "Please wait" 10 70 0
+										./build &>> $wiringpi_log
+										echo "100" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installing WiringPi" --gauge "Installation finished" 10 70 0										
+										echo "$date Done! WiringPi has been installed!" &>> $wiringpi_log
+										sudo echo "$date Done! WiringPi has been installed!" >> $debug
+							fi							
+							dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "WiringPi installation finshed" --yes-label "Yes" --no-label "No" --yesno '\n WiringPi installation finished\n Show logfile?' 10 60
+							selection=$?
+							for yesno in $selection
+							do
+								case $yesno in
+									0)
+										################# Show logfile #################
+										dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --exit-label "OK" --textbox $wiringpi_log 50 150
+										;;
+								esac
+							done
+						;;
+					1)
+						dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "WiringPi installation cancelled" --msgbox '\nWiringPi installation cancelled by user' 10 60
+						sudo echo "$date WiringPi installation cancelled by user" >> $debug
+						;;
+					255)
+						dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "WiringPi installation aborted" --msgbox '\nWiringPi installation aborted by pressing esc' 10 60
+						sudo echo "$date WiringPi installation cancelled by escape" >> $debug
+						;;
+					esac
+				done
+				;;
+			4)	
+				################# 433MHz Utils Installer #################
+				dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "433MHZ Utils installation starts" --msgbox '\nInstallation of 433MHz Utils starts' 10 60
+				sudo echo "$date Select : Installing 433MHZ Utils" >> $debug
+				dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "433MHz Utils installation starts" --yes-label "Yes" --no-label "No" --yesno "\nDo you want to continue with installing 433MHz Utils?" 10 60
+				selection=$?
+				for yesno in $selection
+				do
+				   case $yesno in
+					0)
+						dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation starts" --msgbox '\nInstallation of 433MHz Utils' 10 60		
+						################# 433 MHz Utils Installation Script #################
+						dir="/home/pi/433Utils"
+						if [ -d "$dir" ]
+								then
+										sudo rm -rf $rf433mhzutils_log &>> /dev/null
+										echo "$date 433MHz Utils already exists. Nothing to install." &>> $rf433mhzutils_log
+										sudo echo "4$date33MHz Utils already exists. Nothing to install." &>> $debug
+								else
+										echo "$date Installing 433MHz Utils." &>> debug.log
+										sudo rm -rf $rf433mhzutils_log
+										echo "0" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --gauge "Please wait" 10 70 0
+										cd /home/pi &>> $rf433mhzutils_log
+										sudo apt-get -qq install git-core &>> $rf433mhzutils_log
+										echo "25" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --gauge "Please wait" 10 70 0
+										cd /home/pi &>> $rf433mhzutils_log &>> $rf433mhzutils_log
+										git clone git://github.com/ninjablocks/433Utils.git &>> $rf433mhzutils_log
+										echo "50" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --gauge "Please wait" 10 70 0
+										cd 433Utils/RPi_utils &>> $rf433mhzutils_log
+										make all &>> $rf433mhzutils_log
+										echo "75" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --gauge "Please wait" 10 70 0
+										cp /home/pi/433Utils/RPi_utils/send /usr/bin &>> $rf433mhzutils_log
+										sudo chmod +x /usr/bin/send &>> $rf433mhzutils_log
+										echo "100" | dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --gauge "Installation finished!" 10 70 0										
+										echo "$date Done! 433 MHz Utils has been installed!" &>> $rf433mhzutils_log
+										sudo echo "$date Done! 433 MHz Utils has been installed!" >> $debug
+						fi				
+						dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "433MHz installation finshed" --yes-label "Yes" --no-label "No" --yesno '\n 433MHz Utils installation finished\n Show logfile?' 10 60
+						selection=$?
+						for yesno in $selection
+						do
+							case $yesno in
+								0)
+									################# Show logfile #################
+									dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --exit-label "OK" --textbox $rf433mhzutils_log 50 150
+							esac
+						done
+						;;
+					1)
+						dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation of 433MHz Utils cancelled" --msgbox '\n433MHz Utils installation cancelled by user' 10 60						
+						sudo echo "$date 433MHz Utils installation cancelled" by User >> $debug
+						;;
+					255)
+						dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation of 433MHz Utils aborted" --msgbox '\n433MHz installation aborted by pressing esc' 10 60
+						sudo echo "$date 433MHZ Utils installation cancelled by escape" >> $debug
+						;;
+					esac
+				done
+				;;
+			255)
+				dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Installation aborted" --msgbox '\nInstallation aborted by user' 10 60
+				sudo echo "$date Installation procedure aborted or cancelled" >> $debug
+				;;
+		esac
+	done
+}
+################## Contact Menu #################
+contact() {
+dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"  \
+	   --title "Contact and Information"\
+	   --ok-label "Back"\
+	   --msgbox '\nWe are providing several webservices for learning more about Pimatic : \n\n
+				   Ask your Questions right away at the\n
+				   Forum 	: 	http://forum.pimatic.org\n\n
+				   Have a look at the plugins and guides on the\n
+				   Website 	:	http://www.pimatic.org\n\n
+				   Get the latest news and give Feedback at\n
+				   Facebook :	http://www.facebook.com/pimatic\n\n
+				   Become a developer and contribute to\n
+				   Github	:	http://github.com/pimatic\n\n
+				   Try the Pimatic Demo online at\n
+				   Demo		:	http://demo.pimatic.org' 23 80
+	}
+
+################# GPL Menu #################
+gpl() {
+dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "GNU GPL License" --exit-label "Back" --textbox GPL.txt 40 80
+}
+
+################# Main Menu #################
+main_menu() {   
+	### create main menu using dialog
+	dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Pimatic Installer - V. $VER"\
+		   --cancel-label "Quit"\
+		   --menu "Move using [UP] [DOWN], [Enter] to select" 14 60 10\
+				1 "Installation Menu"\
+				2 "Contact and Information"\
+				3 "GNU GPL License"\
+				4 "Exit Pimatic Installer" 2>$_temp	 
+		 
+    opt=${?}
+    if [ $opt != 0 ]; then sudo rm $_temp; exit; fi
+    menuitem=`cat $_temp`
+    echo "menu=$menuitem"
+    case $menuitem in
+        1) installation;;
+        2) contact;;
+		3) gpl;;
+		4) rm $_temp; clear; exit;;
+    esac
+}
+
+while true; do
+  main_menu
+done
