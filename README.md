@@ -10,7 +10,9 @@ If installing 433MHzUtils, be sure to install WiringPi also, otherwise it won't 
 
 Installation notice : 
 ```sudo apt-get install dialog```
+
 ```cd pimatic-installer```
+
 ```sudo bash install```
 
 
