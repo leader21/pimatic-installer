@@ -18,6 +18,12 @@ If installing 433MHzUtils, be sure to install WiringPi also, otherwise it won't 
 
 ```sudo apt-get install dialog```
 
+```sudo apt-get install git```
+
+```cd /home/pi```
+
+```git clone https://github.com/leader21/pimatic-installer.git```
+
 ```cd pimatic-installer```
 
 ```sudo bash install```
