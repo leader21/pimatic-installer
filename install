@@ -15,12 +15,12 @@
 #
 ##################################################################
 
+################ Set version number ################
+VER='0.1.1'
+#################### Changelog #####################
+v0.1.1 fixed broken admin password query
 
-################# Set Variables #################
-
-################# Set version number #################
-VER='0.1.0'
-################# Set dir and file paths #################
+############## Set dir and file paths ##############
 debug="/home/pi/pimatic-installer/logs/debug.log"
 install_dir="/home/pi/pimatic-installer"
 homeduino_installdir="/home/pi/homeduino"
@@ -106,16 +106,11 @@ installation() {
 									echo "$date Done! Pimatic has been installed! Keep in mind that the first start of Pimatic takes some time!" >> $pimatic_log
 									sudo echo "$date Done! Pimatic has been installed! Keep in mind that the first start of Pimatic takes some time!" >> $debug																														
 									################# Get admin password and write it to config.json #################
-									data=$(tempfile 2>/dev/null)
-									trap "rm -f $data" 0 1 2 5 15						 
-									### get password with the --insecure option
-									dialog --title "Set admin password" \
-									--insecure \
-									--nocancel \
-									--passwordbox "Enter your password for admin" 10 30> $data		
-									passwd=`cat $data`
-									sudo sed -i "s/\"password\": \"\"/\"password\": \"$passwd\"/g" /home/pi/pimatic-app/config.json
+									data=$(dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date" --passwordbox "Enter your admin password" 10 30 3>&1- 1>&2- 2>&3-)																		
+									sudo sed -i "s/\"password\": \"\"/\"password\": \"$data\"/g" $install_dir/config.json
+									sudo echo "Set admin password done." >> $debug							
 									sudo echo "$date Set admin password done." >> $debug
+									############### End of password section ###############
 						fi
 						################# Show Pimatic Logfile #################		
 						dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Pimatic installation finshed" --yes-label "Yes" --no-label "No" --yesno '\n Pimatic installation finished. \nShow logfile?' 10 60
