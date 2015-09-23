@@ -106,9 +106,9 @@ installation() {
 									echo "$date Done! Pimatic has been installed! Keep in mind that the first start of Pimatic takes some time!" >> $pimatic_log
 									sudo echo "$date Done! Pimatic has been installed! Keep in mind that the first start of Pimatic takes some time!" >> $debug																														
 									################# Get admin password and write it to config.json #################
-									data=$(dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date" --passwordbox "Enter your admin password" 10 30 3>&1- 1>&2- 2>&3-)																		
-									sudo sed -i "s/\"password\": \"\"/\"password\": \"$data\"/g" $install_dir/config.json
-									sudo echo "Set admin password done." >> $debug							
+									data=$(dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date" --insecure --passwordbox "Enter your admin password" 10 30 3>&1- 1>&2- 2>&3-) > $data																	
+									sudo sed -i "s/\"password\": \"\"/\"password\": \"$data\"/g" /home/pi/pimatic-app/config.json
+									sudo echo "$date Set admin password done." >> $pimatic_log						
 									sudo echo "$date Set admin password done." >> $debug
 									############### End of password section ###############
 						fi
