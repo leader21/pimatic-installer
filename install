@@ -18,7 +18,7 @@
 ################ Set version number ################
 VER='0.1.1'
 #################### Changelog #####################
-v0.1.1 fixed broken admin password query
+#v0.1.1 fixed broken admin password query
 
 ############## Set dir and file paths ##############
 debug="/home/pi/pimatic-installer/logs/debug.log"
