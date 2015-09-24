@@ -119,7 +119,7 @@ installation() {
 						do
 							case $yesno in
 								0)
-									dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --textbox /home/pi/dialog/pimatic.log 50 150
+									dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --textbox $install_dir/logs/pimatic.log 50 150
 									dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "Pimatic installation finished" --msgbox '\nPlease keep in mind that the first start of Pimatic takes a while (keep calm again ;)! \n The SQlite3 Database needs to be build. \n' 10 60 
 									;;
 							esac
