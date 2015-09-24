@@ -598,7 +598,7 @@ dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"  \
 
 ################# GPL Menu #################
 gpl() {
-dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date"   --title "GNU GPL License" --exit-label "Back" --textbox GPL.txt 40 80
+dialog --backtitle "Pimatic Homeautomation System Installer v$VER - $date" --title "GNU GPL License" --exit-label "Back" --textbox $install_dir/GPL.txt 40 80
 }
 
 ################# Main Menu #################
