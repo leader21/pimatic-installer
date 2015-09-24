@@ -33,8 +33,8 @@ _temp="/tmp/pmaticinstaller.$$"
 date=`date`
 
 ################# Reset and Create logfiles  #################
-sudo rm -rf $homeduino_scripts/*
-sudo touch $pimatic_log; sudo touch $homeduino_log; sudo touch $pimatic_log
+#sudo rm -rf $homeduino_scripts/*
+sudo touch $pimatic_log; sudo touch $homeduino_log
 sudo touch $wiringpi_log; sudo touch $rf433mhzutils_log; sudo touch $debug
 
 ################# Installation Menu #################
