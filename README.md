@@ -13,6 +13,8 @@ Actually there are two additional programs to select : WiringPi and 433MHzUtils
 
 If installing 433MHzUtils, be sure to install WiringPi also, otherwise it won't install.
 
+If installing from scratch, please use the latest Raspbian image from here : http://downloads.raspberrypi.org/raspbian_latest
+
 
 **Installation notice :**
 
